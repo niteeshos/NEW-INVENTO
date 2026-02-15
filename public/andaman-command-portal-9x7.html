@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Andaman&Co. Command Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Syne:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body class="admin-body">
+    <main class="container admin-wrap">
+      <h1>Andaman&Co. Admin Command Portal</h1>
+      <p>Use this private route to manage hotels, activities, cars and gallery items.</p>
+
+      <section class="admin-card">
+        <h2>Admin Key</h2>
+        <input id="admin-key" type="password" placeholder="Enter Admin Key" />
+      </section>
+
+      <section class="admin-card">
+        <h2>Add Hotel</h2>
+        <form id="hotel-form" class="admin-form">
+          <input name="name" placeholder="Hotel Name" required />
+          <input name="location" placeholder="Location" required />
+          <input type="number" name="price_per_night" placeholder="Price per Night" required />
+          <input name="image_url" placeholder="Image URL" required />
+          <textarea name="description" placeholder="Description" required></textarea>
+          <button class="primary-btn" type="submit">Add Hotel</button>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <h2>Add Activity</h2>
+        <form id="activity-form" class="admin-form">
+          <input name="title" placeholder="Activity Title" required />
+          <input name="category" placeholder="Category" required />
+          <input type="number" name="price" placeholder="Price" required />
+          <input name="duration" placeholder="Duration (e.g. 2 Hours)" required />
+          <input name="image_url" placeholder="Image URL" required />
+          <textarea name="description" placeholder="Description" required></textarea>
+          <button class="primary-btn" type="submit">Add Activity</button>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <h2>Add Car Listing</h2>
+        <form id="car-form" class="admin-form">
+          <input name="name" placeholder="Car Name" required />
+          <input name="car_type" placeholder="Type" required />
+          <input type="number" name="seats" placeholder="Seats" required />
+          <input type="number" name="price_per_day" placeholder="Price per day" required />
+          <input name="image_url" placeholder="Image URL" required />
+          <textarea name="description" placeholder="Description" required></textarea>
+          <button class="primary-btn" type="submit">Add Car</button>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <h2>Add Gallery Story</h2>
+        <form id="gallery-form" class="admin-form">
+          <input name="guest_name" placeholder="Guest Name" required />
+          <input name="title" placeholder="Story Title" required />
+          <input type="number" min="1" max="5" name="rating" placeholder="Rating (1-5)" required />
+          <input name="image_url" placeholder="Image URL" required />
+          <textarea name="story" placeholder="Story" required></textarea>
+          <button class="primary-btn" type="submit">Add Story</button>
+        </form>
+      </section>
+
+      <section class="admin-card">
+        <h2>Booking Inquiries</h2>
+        <button id="load-bookings" class="primary-btn">Load Tour Bookings</button>
+        <div id="bookings-list" class="bookings-list"></div>
+      </section>
+
+      <section class="admin-card">
+        <h2>Car Booking Inquiries</h2>
+        <button id="load-car-bookings" class="primary-btn">Load Car Bookings</button>
+        <div id="car-bookings-list" class="bookings-list"></div>
+      </section>
+    </main>
+
+    <script src="/js/admin.js"></script>
+  </body>
+</html>
