@@ -9,12 +9,24 @@ const INTENTS = [
 ];
 
 const PROVIDER_NAMES = ['calendar', 'email', 'tasks', 'banking', 'files', 'devices'];
+const WAKE_WORDS = ['don', 'hey don', 'ok don'];
 
 function detectIntent(command) {
   const clean = command.toLowerCase().trim();
   const prefix = INTENTS.find((entry) => entry.keywords.some((word) => clean.startsWith(`${word} `) || clean === word));
   if (prefix) return prefix.intent;
   return INTENTS.find((entry) => entry.keywords.some((word) => clean.includes(word)))?.intent ?? 'general';
+}
+
+function detectWakeWord(transcript) {
+  const clean = transcript.toLowerCase().trim();
+  return WAKE_WORDS.find((wake) => clean.startsWith(`${wake} `) || clean === wake) ?? null;
+}
+
+function stripWakeWord(transcript) {
+  const wake = detectWakeWord(transcript);
+  if (!wake) return transcript.trim();
+  return transcript.toLowerCase().replace(new RegExp(`^${wake}`), '').trim() || 'read status';
 }
 
 function extractTarget(command) {
@@ -347,7 +359,7 @@ function createDonBrain(seed = {}) {
       ]);
       return {
         summary: 'Command received. I can execute planning, spending, reading, automation, provider connection, and risk analysis.',
-        actions: ['Try: "connect banking".', 'Try: "Spend 800 from travel budget approve".'],
+        actions: ['Try: "Don connect banking".', 'Try: "Don spend 800 from travel budget approve".'],
         riskLevel: 'low',
         execution,
       };
@@ -369,7 +381,39 @@ function createDonBrain(seed = {}) {
     };
   };
 
-  return { process, getSnapshot };
+  const processVoiceCommand = (transcript) => {
+    const wakeWord = detectWakeWord(transcript);
+    if (!wakeWord) {
+      return {
+        accepted: false,
+        reason: 'wake word not detected',
+        results: [],
+        snapshot: getSnapshot(),
+      };
+    }
+
+    const spokenCommand = stripWakeWord(transcript);
+    const primary = process(spokenCommand);
+    const results = [primary];
+
+    if (primary.intent === 'manage' || primary.intent === 'automate') {
+      results.push(process('read status'));
+    }
+
+    if (primary.intent === 'spend' && ['medium', 'high'].includes(primary.riskLevel)) {
+      results.push(process('assess risk now'));
+    }
+
+    return {
+      accepted: true,
+      reason: `wake word ${wakeWord} accepted`,
+      spokenCommand,
+      results,
+      snapshot: getSnapshot(),
+    };
+  };
+
+  return { process, processVoiceCommand, getSnapshot };
 }
 
 const defaultBrain = createDonBrain();
@@ -377,4 +421,10 @@ function runDonCommand(command) {
   return defaultBrain.process(command);
 }
 
-module.exports = { runDonCommand, createDonBrain, extractTarget, detectIntent };
+module.exports = {
+  runDonCommand,
+  createDonBrain,
+  extractTarget,
+  detectIntent,
+  detectWakeWord,
+};

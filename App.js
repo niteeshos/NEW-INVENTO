@@ -14,21 +14,22 @@ import * as Speech from 'expo-speech';
 import { createDonBrain } from './src/donEngine';
 
 const powerCommands = [
-  'Manage product launch checklist tomorrow at 9 am',
-  'Spend 900 from travel budget',
-  'Spend 900 from travel budget approve',
-  'Automate my morning routine',
-  'Connect banking integration',
-  'Assess execution risk now',
-  'Read and summarize my system status',
+  'Don manage product launch checklist tomorrow at 9 am',
+  'Don spend 900 from travel budget',
+  'Don spend 900 from travel budget approve',
+  'Don automate my morning routine',
+  'Don connect banking integration',
+  'Don assess execution risk now',
+  'Don read and summarize my system status',
 ];
 
 export default function App() {
   const brainRef = useRef(createDonBrain());
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('Don read and summarize my system status');
   const [timeline, setTimeline] = useState([]);
   const [snapshot, setSnapshot] = useState(brainRef.current.getSnapshot());
   const [lockScreenMode, setLockScreenMode] = useState(true);
+  const [continuousVoice, setContinuousVoice] = useState(true);
   const [voiceListening, setVoiceListening] = useState(false);
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -44,39 +45,43 @@ export default function App() {
   }, [pulse]);
 
   const intro = useMemo(
-    () => 'Don is an execution-grade voice brain with lock-screen wake mode, policy gates, and live operational telemetry.',
+    () => 'Don is fully voice-automated via wake-word pipeline: say “Don …command…” and execution starts with autonomous follow-up actions.',
     []
   );
 
-  const runCommand = (text, source = 'typed') => {
-    if (!text.trim()) return;
-    const result = brainRef.current.process(text);
-
-    const nextTimeline = [
-      { role: source === 'voice' ? 'Voice' : 'You', text },
-      {
-        role: 'Don',
-        text: result.summary,
-        details: [...result.actions, `Execution: ${result.execution.id} (${result.execution.title})`],
-        riskLevel: result.riskLevel,
-      },
-      ...timeline,
-    ];
-
-    setTimeline(nextTimeline);
-    setSnapshot(result.snapshot);
-    setQuery('');
-    Speech.speak(result.summary, { language: 'en', pitch: 1.02, rate: 1 });
+  const pushTimeline = (role, text, details, riskLevel) => {
+    setTimeline((prev) => [{ role, text, details, riskLevel }, ...prev]);
   };
 
-  const triggerVoiceWake = () => {
-    setVoiceListening(true);
-    const wakeCommand = query.trim() || 'Read and summarize my system status';
+  const speakResults = async (results) => {
+    for (const result of results) {
+      Speech.speak(result.summary, { language: 'en', pitch: 1.02, rate: 1 });
+    }
+  };
 
-    setTimeout(() => {
-      runCommand(wakeCommand, 'voice');
-      setVoiceListening(false);
-    }, 550);
+  const runVoicePipeline = async (transcript) => {
+    const voiceRun = brainRef.current.processVoiceCommand(transcript);
+
+    pushTimeline('Voice', transcript, [voiceRun.reason], undefined);
+
+    if (!voiceRun.accepted) {
+      setSnapshot(voiceRun.snapshot);
+      return;
+    }
+
+    voiceRun.results.forEach((result) => {
+      pushTimeline('Don', result.summary, [...result.actions, `Execution: ${result.execution.id} (${result.execution.title})`], result.riskLevel);
+    });
+
+    setSnapshot(voiceRun.snapshot);
+    await speakResults(voiceRun.results);
+  };
+
+  const triggerVoiceWake = async () => {
+    setVoiceListening(true);
+    const transcript = query.trim() || 'Don read status';
+    await runVoicePipeline(transcript);
+    setVoiceListening(false);
   };
 
   return (
@@ -89,22 +94,27 @@ export default function App() {
         <Switch value={lockScreenMode} onValueChange={setLockScreenMode} />
       </View>
 
+      <View style={styles.switchRow}>
+        <Text style={styles.switchText}>Continuous voice automation</Text>
+        <Switch value={continuousVoice} onValueChange={setContinuousVoice} />
+      </View>
+
       {lockScreenMode ? (
         <View style={styles.lockPanel}>
-          <Text style={styles.lockTitle}>LOCK SCREEN • Wake word: “Don”</Text>
+          <Text style={styles.lockTitle}>LOCK SCREEN • Wake phrase: “Don ...”</Text>
           <Animated.View
             style={[
               styles.voiceOrb,
               {
-                transform: [{ scale: voiceListening ? 1.18 : pulse }],
+                transform: [{ scale: voiceListening || continuousVoice ? 1.18 : pulse }],
                 shadowOpacity: voiceListening ? 0.9 : 0.45,
               },
             ]}
           >
-            <Text style={styles.voiceOrbText}>{voiceListening ? 'Listening…' : 'Ready'}</Text>
+            <Text style={styles.voiceOrbText}>{voiceListening ? 'Listening…' : 'Always Ready'}</Text>
           </Animated.View>
           <TouchableOpacity style={styles.voiceBtn} onPressIn={triggerVoiceWake}>
-            <Text style={styles.btnText}>Hold to Speak</Text>
+            <Text style={styles.btnText}>Speak Command</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -122,20 +132,14 @@ export default function App() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Say/type a command, then tap Execute or Hold to Speak"
+          placeholder="Voice transcript text, e.g. 'Don automate morning routine'"
           placeholderTextColor="#9fa6b2"
           style={styles.input}
           multiline
         />
       </View>
 
-      <View style={styles.actions}>
-        <TouchableOpacity style={styles.primaryBtn} onPress={() => runCommand(query)}>
-          <Text style={styles.btnText}>Execute</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.examplesTitle}>Execution commands</Text>
+      <Text style={styles.examplesTitle}>Voice commands</Text>
       <View style={styles.examplesWrap}>
         {powerCommands.map((example) => (
           <TouchableOpacity key={example} style={styles.exampleChip} onPress={() => setQuery(example)}>
@@ -175,12 +179,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#050816', padding: 16 },
   title: { color: '#f3f4f6', fontSize: 36, fontWeight: '700' },
   subtitle: { color: '#c3c8d3', marginTop: 8, fontSize: 14, lineHeight: 21 },
-  switchRow: {
-    marginTop: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  switchRow: { marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   switchText: { color: '#dce3f5', fontWeight: '600' },
   lockPanel: {
     marginTop: 10,
@@ -234,15 +233,6 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
-  actions: { flexDirection: 'row', marginTop: 12 },
-  primaryBtn: {
-    flex: 1,
-    backgroundColor: '#4461ff',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   examplesTitle: { marginTop: 16, color: '#dbe2f4', fontWeight: '600' },
   examplesWrap: { marginTop: 8, gap: 8 },
   exampleChip: {

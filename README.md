@@ -1,44 +1,45 @@
-# Don — Stateful Execution-Grade Mobile Brain
+# Don — Fully Voice-Automated Execution Brain
 
-Don is a React Native + Expo app designed as an execution-grade assistant with lock-screen voice UX, stateful operations, and policy-aware automation.
+Don is a React Native + Expo app built around a wake-word-first automation pipeline.
 
-## What Don does now
+## Fully voice automated behavior
 
-- **Stateful command execution engine** with persistent memory for tasks, workflows, budgets, provider links, and audit events.
-- **Execution pipeline tracking** where each command emits a structured execution record (`exec-*`) with deterministic step history.
-- **Lock-screen voice mode UI** with wake-word style panel, animated voice orb, and hold-to-speak trigger behavior.
-- **Integration registry** for `calendar`, `email`, `tasks`, `banking`, `files`, and `devices` using `connect <provider>` commands.
-- **Policy-gated finance control** that blocks high-value spend without explicit approval phrase.
-- **Operational telemetry dashboard** with autonomy, risk, tasks, flows, providers, and execution counters.
+- Wake phrase support (`Don ...`) via a dedicated voice command pipeline.
+- Wake-word validation and transcript parsing before command execution.
+- Autonomous follow-up chaining:
+  - voice `manage`/`automate` commands auto-run a `read status` follow-up.
+  - risky voice `spend` commands auto-run an `assess risk` follow-up.
+- Spoken responses for each executed step using `expo-speech`.
+- Lock-screen-style voice panel with animated orb and voice-ready state.
 
-## Example commands
+## Stateful execution engine
 
-- `connect banking integration`
-- `manage launch prep tomorrow at 8 am`
-- `spend 900 from travel budget`
-- `spend 900 from travel budget approve`
-- `automate morning routine`
-- `assess risk now`
+- Persistent memory for tasks, workflows, budgets, providers, and audits.
+- Policy gate for high-value spending (requires approval phrase).
+- Execution tracking (`exec-*`) and operational telemetry snapshots.
 
-## Architecture
+## Example voice transcripts
 
-- `App.js` — mobile UI, lock-screen voice interaction, animation, telemetry cards, command timeline.
-- `src/donEngine.js` — stateful Don brain with intent routing, policy engine, provider registry, execution queue, and snapshots.
-- `test/donEngine.test.js` — unit tests for intent parsing, policy behavior, provider linking, and execution tracking.
+- `Don manage launch prep tomorrow at 8 am`
+- `Don automate my morning routine`
+- `Don spend 900 from travel budget`
+- `Don spend 900 from travel budget approve`
+- `Don connect banking integration`
 
-## Run locally
+## Files
+
+- `App.js` — voice-first UI with lock-screen panel and automated voice pipeline.
+- `src/donEngine.js` — command brain, wake-word parser, policy logic, and execution state.
+- `test/donEngine.test.js` — tests for wake-word behavior, autonomous follow-ups, and policy execution.
+
+## Run
 
 ```bash
 npm install
 npm run start
-```
-
-## Run tests
-
-```bash
 npm test
 ```
 
-## Notes
+## Note
 
-This implementation provides a lock-screen **experience** in-app. True OS-level lock-screen voice execution requires platform-native integration and permissions outside this Expo-only repo.
+This repository implements a complete **voice automation pipeline inside the app**. True OS-level background/lock-screen microphone capture still requires platform-native permissions/integration beyond this Expo-only baseline.
