@@ -12,8 +12,8 @@ const PROVIDER_NAMES = ['calendar', 'email', 'tasks', 'banking', 'files', 'devic
 
 function detectIntent(command) {
   const clean = command.toLowerCase().trim();
-  const byPrefix = INTENTS.find((entry) => entry.keywords.some((word) => clean.startsWith(`${word} `) || clean === word));
-  if (byPrefix) return byPrefix.intent;
+  const prefix = INTENTS.find((entry) => entry.keywords.some((word) => clean.startsWith(`${word} `) || clean === word));
+  if (prefix) return prefix.intent;
   return INTENTS.find((entry) => entry.keywords.some((word) => clean.includes(word)))?.intent ?? 'general';
 }
 
@@ -90,6 +90,8 @@ function createDonBrain(seed = {}) {
     automations: [],
     assessments: [],
     auditLog: [],
+    executions: [],
+    sequence: 0,
     providers: createProviderRegistry(seed.providers),
     budget: {
       general: { limit: 3000, spent: 0 },
@@ -103,7 +105,22 @@ function createDonBrain(seed = {}) {
 
   const logAudit = (entry) => {
     state.auditLog.unshift({ at: new Date().toISOString(), ...entry });
-    state.auditLog = state.auditLog.slice(0, 100);
+    state.auditLog = state.auditLog.slice(0, 200);
+  };
+
+  const queueExecution = (intent, title, steps) => {
+    state.sequence += 1;
+    const execution = {
+      id: `exec-${state.sequence}`,
+      intent,
+      title,
+      status: 'completed',
+      steps,
+      createdAt: new Date().toISOString(),
+    };
+    state.executions.unshift(execution);
+    state.executions = state.executions.slice(0, 100);
+    return execution;
   };
 
   const ensureBudgetCategory = (name) => {
@@ -117,8 +134,11 @@ function createDonBrain(seed = {}) {
     );
 
     const pendingTasks = state.tasks.filter((task) => task.status !== 'done').length;
-    const connectedProviders = Object.values(state.providers).filter((p) => p.connected).length;
-    const autonomyScore = Math.min(100, 30 + state.automations.length * 12 + connectedProviders * 8 + state.tasks.length * 2);
+    const connectedProviders = Object.values(state.providers).filter((provider) => provider.connected).length;
+    const autonomyScore = Math.min(
+      100,
+      35 + state.automations.length * 10 + connectedProviders * 8 + state.tasks.length * 2 + state.executions.length
+    );
     const riskScore =
       Math.floor(pendingTasks / 2) +
       (totalBudget.spent > totalBudget.limit * 0.85 ? 4 : 1) +
@@ -134,6 +154,7 @@ function createDonBrain(seed = {}) {
       riskLevel: riskFromScore(riskScore),
       connectedProviders,
       auditEvents: state.auditLog.length,
+      executions: state.executions.length,
     };
   };
 
@@ -145,16 +166,23 @@ function createDonBrain(seed = {}) {
           summary: `Specify a provider to connect: ${PROVIDER_NAMES.join(', ')}.`,
           actions: ['Example: "connect banking".'],
           riskLevel: 'low',
+          execution: queueExecution('connect', 'integration resolution', ['validate provider target', 'request connection']),
         };
       }
 
       state.providers[provider].connected = true;
       logAudit({ type: 'connect', provider, status: 'success' });
+      const execution = queueExecution('connect', `connect ${provider}`, [
+        'validate provider identity',
+        'attach auth token scope',
+        'enable synchronized command routing',
+      ]);
 
       return {
-        summary: `${provider} integration connected and authenticated pipeline is now active.`,
+        summary: `${provider} integration connected and execution route is now active.`,
         actions: [`Provider online: ${provider}.`, 'Audit event recorded for compliance.'],
         riskLevel: 'low',
+        execution,
       };
     },
 
@@ -162,10 +190,17 @@ function createDonBrain(seed = {}) {
       const target = extractTarget(command);
       state.openedWorkspaces.unshift(target);
       logAudit({ type: 'open', target, status: 'success' });
+      const execution = queueExecution('open', `open ${target}`, [
+        'resolve workspace locator',
+        'activate context memory pin',
+        'warm follow-up command cache',
+      ]);
+
       return {
-        summary: `Opened ${target} and pinned it to your high-priority workspace stack.`,
-        actions: [`Workspace active: ${target}`, 'Context memory updated for smarter follow-up commands.'],
+        summary: `Opened ${target} and pinned it to your priority workspace stack.`,
+        actions: [`Workspace active: ${target}`, 'Context memory updated for faster next actions.'],
         riskLevel: 'low',
+        execution,
       };
     },
 
@@ -173,14 +208,21 @@ function createDonBrain(seed = {}) {
       const amount = extractAmount(command);
       const budgetName = extractBudget(command);
       ensureBudgetCategory(budgetName);
-
       const decision = policy.approveSpend({ amount, command });
+
       if (!decision.allow) {
         logAudit({ type: 'spend', status: 'blocked', reason: decision.reason, amount, budget: budgetName });
+        const execution = queueExecution('spend', 'policy-blocked transaction', [
+          'classify spend risk tier',
+          'enforce approval gate',
+          'abort money movement',
+        ]);
+
         return {
           summary: `Spend blocked by policy. ${decision.reason}.`,
           actions: ['No funds moved.', 'Retry with explicit approval phrase if intentional.'],
           riskLevel: 'medium',
+          execution,
         };
       }
 
@@ -189,6 +231,11 @@ function createDonBrain(seed = {}) {
       const usage = Math.round((bucket.spent / bucket.limit) * 100);
       const riskLevel = usage >= 90 ? 'high' : usage >= 70 ? 'medium' : 'low';
       logAudit({ type: 'spend', status: 'success', amount, budget: budgetName, reason: decision.reason });
+      const execution = queueExecution('spend', `spend in ${budgetName}`, [
+        'validate policy and approvals',
+        'apply budget mutation',
+        'commit transaction ledger event',
+      ]);
 
       return {
         summary: amount
@@ -199,6 +246,7 @@ function createDonBrain(seed = {}) {
           `Policy gate: ${decision.reason}.`,
         ],
         riskLevel,
+        execution,
       };
     },
 
@@ -209,6 +257,11 @@ function createDonBrain(seed = {}) {
         .filter(([, info]) => info.connected)
         .map(([name]) => name)
         .join(', ');
+      const execution = queueExecution('read', 'generate command brief', [
+        'scan active state graph',
+        'prioritize unresolved items',
+        'generate operator brief',
+      ]);
 
       return {
         summary: `Live brief complete: ${pendingTasks.length} active priorities, ${state.automations.length} automations, ${providersOnline || '0'} providers online.`,
@@ -217,6 +270,7 @@ function createDonBrain(seed = {}) {
           pendingTasks.length ? `Top pending task: ${pendingTasks[0].title} (${pendingTasks[0].when}).` : 'No pending tasks; your queue is clear.',
         ],
         riskLevel: pendingTasks.length > 8 ? 'medium' : 'low',
+        execution,
       };
     },
 
@@ -226,6 +280,11 @@ function createDonBrain(seed = {}) {
       const task = { title, when, status: 'planned' };
       state.tasks.unshift(task);
       logAudit({ type: 'manage', status: 'success', task: title, when });
+      const execution = queueExecution('manage', `schedule ${title}`, [
+        'parse schedule constraints',
+        'allocate task slot',
+        'sync to connected planners',
+      ]);
 
       return {
         summary: `Plan optimized. Added "${title}" for ${when} with dependency-aware scheduling.`,
@@ -236,6 +295,7 @@ function createDonBrain(seed = {}) {
             : 'Calendar provider offline. Use "connect calendar" for sync.',
         ],
         riskLevel: state.tasks.length > 10 ? 'medium' : 'low',
+        execution,
       };
     },
 
@@ -244,11 +304,17 @@ function createDonBrain(seed = {}) {
       const automation = { workflow, status: 'armed' };
       state.automations.unshift(automation);
       logAudit({ type: 'automate', status: 'success', workflow });
+      const execution = queueExecution('automate', `automate ${workflow}`, [
+        'compile trigger graph',
+        'arm workflow runtime',
+        'enable rollback handlers',
+      ]);
 
       return {
         summary: `Automation armed: ${workflow}. Don will run it with context-aware triggers.`,
         actions: ['Workflow status: armed.', 'Fallback recovery and notification hooks enabled.'],
         riskLevel: 'low',
+        execution,
       };
     },
 
@@ -257,6 +323,11 @@ function createDonBrain(seed = {}) {
       const assessment = { at: new Date().toISOString(), riskLevel: snapshot.riskLevel };
       state.assessments.unshift(assessment);
       logAudit({ type: 'assess', status: 'success', riskLevel: snapshot.riskLevel });
+      const execution = queueExecution('assess', 'strategic risk assessment', [
+        'aggregate performance metrics',
+        'compute risk and autonomy indices',
+        'emit strategic recommendations',
+      ]);
 
       return {
         summary: `Strategic assessment complete. Current operational risk is ${snapshot.riskLevel.toUpperCase()}.`,
@@ -265,14 +336,20 @@ function createDonBrain(seed = {}) {
           `Pressure: ${snapshot.pendingTasks} tasks, ${snapshot.automations} automations, ${snapshot.connectedProviders} providers connected.`,
         ],
         riskLevel: snapshot.riskLevel,
+        execution,
       };
     },
 
     general() {
+      const execution = queueExecution('general', 'general command resolution', [
+        'classify unknown intent',
+        'offer targeted next commands',
+      ]);
       return {
         summary: 'Command received. I can execute planning, spending, reading, automation, provider connection, and risk analysis.',
         actions: ['Try: "connect banking".', 'Try: "Spend 800 from travel budget approve".'],
         riskLevel: 'low',
+        execution,
       };
     },
   };
@@ -287,6 +364,7 @@ function createDonBrain(seed = {}) {
       summary: `Intent ${intent.toUpperCase()}: ${output.summary}`,
       actions: output.actions,
       riskLevel: output.riskLevel,
+      execution: output.execution,
       snapshot,
     };
   };
