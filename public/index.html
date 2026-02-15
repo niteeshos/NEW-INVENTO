@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Andaman&Co. | Premium Tours & Travels</title>
+    <meta
+      name="description"
+      content="Andaman&Co. premium tours and travels platform for curated island escapes, luxury stays and seamless booking support."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Syne:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <header class="hero" id="top">
+      <nav class="nav container">
+        <h1 class="logo">Andaman<span>&Co.</span></h1>
+        <div class="nav-links">
+          <a href="#hotels">Hotels</a>
+          <a href="#activities">Activities</a>
+          <a href="#cars">Cars</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#booking">Bookings</a>
+        </div>
+      </nav>
+      <div class="hero-overlay"></div>
+      <div class="hero-content container">
+        <p class="badge">Luxury Tours & Travels</p>
+        <h2>Discover the Coolest Escape in the Bay of Bengal</h2>
+        <p>
+          Immersive island itineraries, luxury stays, curated activities, chauffeur rides, and smooth digital booking for your next Andaman adventure.
+        </p>
+        <a href="#booking" class="primary-btn">Plan Your Escape</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="section container" id="highlights">
+        <div class="section-head">
+          <h3>Why Andaman&Co.</h3>
+          <p>Crafted experiences from airport pickup to final sunset with zero stress operations.</p>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <h4>24x7 Trip Concierge</h4>
+            <p>Dedicated travel expert for itinerary updates, weather backup plans, and support.</p>
+          </article>
+          <article>
+            <h4>Seamless Island Transfers</h4>
+            <p>Boat + ferry + road transfer coordination in one connected travel workflow.</p>
+          </article>
+          <article>
+            <h4>Premium Payments</h4>
+            <p>Ready architecture for secure transactions, invoice flow, and booking tracking.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section container" id="hotels">
+        <div class="section-head">
+          <h3>Signature Hotels</h3>
+          <p>Stay in premium handpicked locations around Andaman & Nicobar.</p>
+        </div>
+        <div class="grid" id="hotels-grid"></div>
+      </section>
+
+      <section class="section container" id="activities">
+        <div class="section-head">
+          <h3>Elite Activities</h3>
+          <p>Build your travel story with adventure, marine life and premium experiences.</p>
+        </div>
+        <div class="grid" id="activities-grid"></div>
+      </section>
+
+      <section class="section container" id="cars">
+        <div class="section-head">
+          <h3>Car Booking</h3>
+          <p>Book premium island rides with trained drivers and smooth pickup scheduling.</p>
+        </div>
+        <div class="grid" id="cars-grid"></div>
+      </section>
+
+      <section class="section container" id="gallery">
+        <div class="section-head">
+          <h3>Guest & Traveler Experience Gallery</h3>
+          <p>Real stories and snapshots from journeys crafted by Andaman&Co.</p>
+        </div>
+        <div class="grid" id="gallery-grid"></div>
+      </section>
+
+      <section class="section container booking" id="booking">
+        <div class="section-head">
+          <h3>Tour Booking Inquiry</h3>
+          <p>Submit your request and instantly continue the conversation on WhatsApp.</p>
+        </div>
+        <form id="booking-form" class="booking-form">
+          <input type="text" name="guest_name" placeholder="Guest Name" required />
+          <input type="tel" name="phone" placeholder="Phone Number" required />
+          <input type="email" name="email" placeholder="Email Address" required />
+          <input type="text" name="package_name" placeholder="Package Preference" required />
+          <input type="number" min="1" name="guests" placeholder="Number of Guests" required />
+          <input type="number" min="1" name="duration_days" placeholder="Duration (Days)" required />
+          <input type="date" name="check_in_date" required />
+          <textarea name="notes" rows="4" placeholder="Special Notes"></textarea>
+          <button type="submit" class="primary-btn">Submit Tour Inquiry</button>
+          <p id="booking-status"></p>
+        </form>
+      </section>
+
+      <section class="section container booking" id="car-booking">
+        <div class="section-head">
+          <h3>Car Booking Inquiry</h3>
+          <p>Reserve your island vehicle and launch WhatsApp inquiry in one click.</p>
+        </div>
+        <form id="car-booking-form" class="booking-form">
+          <input type="text" name="guest_name" placeholder="Guest Name" required />
+          <input type="tel" name="phone" placeholder="Phone Number" required />
+          <input type="email" name="email" placeholder="Email Address" required />
+          <input type="text" name="car_name" placeholder="Preferred Car" required />
+          <input type="number" min="1" name="travelers" placeholder="Travelers" required />
+          <input type="number" min="1" name="duration_days" placeholder="Duration (Days)" required />
+          <input type="date" name="pickup_date" required />
+          <textarea name="notes" rows="4" placeholder="Pickup location & other notes"></textarea>
+          <button type="submit" class="primary-btn">Submit Car Inquiry</button>
+          <p id="car-booking-status"></p>
+        </form>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container footer-wrap">
+        <p>© <span id="year"></span> Andaman&Co. Crafted for unforgettable island journeys.</p>
+        <a href="#top">Back to top ↑</a>
+      </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+  </body>
+</html>
